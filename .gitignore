@@ -1,0 +1,24 @@
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+.venv/
+venv/
+.env
+
+# Data (raw files are large — download via dataset.py)
+data/raw/
+
+# Model checkpoints
+checkpoints/
+
+# Jupyter
+.ipynb_checkpoints/
+
+# Results / outputs
+results/
+
+# IDE
+.vscode/
+.idea/
+.DS_Store
