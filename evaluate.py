@@ -45,15 +45,18 @@ def evaluate_ranking(
     user_positives: dict,
     device: torch.device,
     k: int = 10,
+    n_neg_candidates: int = 100,
+    seed: int = 42,
 ) -> dict:
     """
-    For each user in test set:
-      1. Score all items with the model.
-      2. Mask out all known-positive items except the current test item.
-      3. Rank and compute HitRate@k and NDCG@k.
+    Evaluation protocol from He et al. 2017:
+      For each user, rank 1 positive test item against 100 randomly sampled negatives.
+      Compute HitRate@k and NDCG@k on this 101-item list.
+
+    This matches the paper's protocol and makes results directly comparable.
     """
     model.eval()
-    all_items = torch.arange(n_items, dtype=torch.long, device=device)
+    rng = np.random.default_rng(seed)
 
     hit_rates, ndcgs = [], []
     seen_users: set[int] = set()
@@ -64,16 +67,24 @@ def evaluate_ranking(
                 continue
             seen_users.add(u)
 
-            user_tensor = torch.full((n_items,), u, dtype=torch.long, device=device)
-            scores = model(user_tensor, all_items).cpu().numpy()
+            # Sample 100 negatives the user has never interacted with
+            pos_set = user_positives.get(u, set())
+            negs = []
+            while len(negs) < n_neg_candidates:
+                cand = int(rng.integers(0, n_items))
+                if cand not in pos_set and cand not in negs:
+                    negs.append(cand)
 
-            # Mask known positives (except the one being evaluated)
-            for idx in user_positives.get(u, set()) - {pos_item}:
-                scores[idx] = -np.inf
+            candidates = [pos_item] + negs  # 101 items total
+            cand_tensor = torch.tensor(candidates, dtype=torch.long, device=device)
+            user_tensor = torch.full((len(candidates),), u, dtype=torch.long, device=device)
 
-            ranked = np.argsort(scores)[::-1][:k].tolist()
-            hit_rates.append(hit_rate_at_k(ranked, {pos_item}, k))
-            ndcgs.append(ndcg_at_k(ranked, {pos_item}, k))
+            scores = model(user_tensor, cand_tensor).cpu().numpy()
+            ranked_idx = np.argsort(scores)[::-1]
+            ranked_items = [candidates[i] for i in ranked_idx]
+
+            hit_rates.append(hit_rate_at_k(ranked_items, {pos_item}, k))
+            ndcgs.append(ndcg_at_k(ranked_items, {pos_item}, k))
 
     return {
         f"HitRate@{k}": float(np.mean(hit_rates)),

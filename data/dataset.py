@@ -29,7 +29,7 @@ def download_movielens(raw_dir: str = _DEFAULT_RAW) -> str:
 
     if not os.path.exists(extract_path):
         zip_path = os.path.join(raw_dir, "ml-1m.zip")
-        print(f"Downloading MovieLens-1M → {zip_path} ...")
+        print(f"Downloading MovieLens-1M to {zip_path} ...")
         urllib.request.urlretrieve(MOVIELENS_URL, zip_path)
         with zipfile.ZipFile(zip_path, "r") as zf:
             zf.extractall(raw_dir)
@@ -212,8 +212,8 @@ def get_dataloaders(
         .to_dict()
     )
 
-    train_ds = MovieLensDataset(train_df, n_items, n_neg=n_neg, is_training=True, all_positive=all_pos)
-    val_ds   = MovieLensDataset(val_df,   n_items, n_neg=0,     is_training=False, all_positive=all_pos)
+    train_ds = MovieLensDataset(train_df, n_items, n_neg=n_neg, is_training=True,  all_positive=all_pos)
+    val_ds   = MovieLensDataset(val_df,   n_items, n_neg=n_neg, is_training=True,  all_positive=all_pos)
     test_ds  = MovieLensDataset(test_df,  n_items, n_neg=0,     is_training=False, all_positive=all_pos)
 
     train_loader = DataLoader(train_ds, batch_size=batch_size, shuffle=True,  num_workers=num_workers)
