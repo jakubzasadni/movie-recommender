@@ -6,6 +6,7 @@ import numpy as np
 import pandas as pd
 import os, sys
 
+os.chdir(os.path.join(os.path.dirname(__file__), ".."))
 sys.path.insert(0, ".")
 from data.dataset import download_movielens, load_ratings, binarize, chronological_split
 

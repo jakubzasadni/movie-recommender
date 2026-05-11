@@ -1,8 +1,11 @@
 """
 Generuje prezentację PowerPoint dla projektu NeuMF.
-Uruchom: python make_presentation.py
-Wynik: reports/prezentacja.pptx
+Uruchom: python scripts/make_presentation.py
+Wynik: reports/prezentacja_rozbudowana.pptx
 """
+
+import os
+os.chdir(os.path.join(os.path.dirname(__file__), ".."))
 
 from pptx import Presentation
 from pptx.util import Inches, Pt
