@@ -49,8 +49,10 @@ class MLPModel(nn.Module):
 
 # ── Training helper ───────────────────────────────────────────────────────────
 
-def train_and_eval(name, model, epochs=EPOCHS):
-    optimizer = optim.Adam(model.parameters(), lr=0.001)
+def train_and_eval(name, model, epochs=EPOCHS, optimizer_cls=optim.Adam, optimizer_kwargs=None):
+    if optimizer_kwargs is None:
+        optimizer_kwargs = {}
+    optimizer = optimizer_cls(model.parameters(), lr=0.001, **optimizer_kwargs)
     criterion = nn.BCELoss()
     best_val, best_state = float("inf"), None
 
@@ -116,6 +118,21 @@ for emb_dim in [8, 16, 64]:
     model = NeuMF(n_users, n_items, gmf_dim=emb_dim, mlp_dim=emb_dim).to(DEVICE)
     m = train_and_eval(name, model)
     RESULTS.append({"variant": name, "emb_dim": emb_dim, **m})
+
+
+# ── Optimizer: Adam vs AdamW (NeuMF, emb_dim=32) ─────────────────────────────
+
+print("=" * 55)
+print("OPTIMIZER: Adam vs AdamW  (NeuMF, emb_dim=32)")
+print("=" * 55)
+
+for opt_name, opt_cls, opt_kwargs in [
+    ("NeuMF-Adam",  optim.Adam,  {}),
+    ("NeuMF-AdamW", optim.AdamW, {"weight_decay": 1e-2}),
+]:
+    model = NeuMF(n_users, n_items, gmf_dim=32, mlp_dim=32).to(DEVICE)
+    m = train_and_eval(opt_name, model, optimizer_cls=opt_cls, optimizer_kwargs=opt_kwargs)
+    RESULTS.append({"variant": opt_name, "emb_dim": 32, **m})
 
 
 # ── Podsumowanie ──────────────────────────────────────────────────────────────
